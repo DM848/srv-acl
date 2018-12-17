@@ -15,6 +15,6 @@ COPY --from=builder /app/webserver .
 COPY containerpilot.json5 /etc/containerpilot.json5
 ENV CONTAINERPILOT=/etc/containerpilot.json5
 
-ENV WEB_SERVER_PORT {{ service.port }}
-EXPOSE {{ service.port }}
+ENV WEB_SERVER_PORT 8888
+EXPOSE 8888
 CMD ["/bin/containerpilot"]

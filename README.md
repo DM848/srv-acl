@@ -1,2 +1,2 @@
-# srv-{{ service.name }}
-{{ service.description }}
+# srv-acl
+ACL + JWT checker. An entrypoint for our platform

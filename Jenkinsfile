@@ -12,7 +12,7 @@ node {
         /* This builds the actual image; synonymous to
          * docker build on the command line */
 
-        app = docker.build("dm848/srv-{{ service.name }}")
+        app = docker.build("dm848/srv-acl")
     }
 
     stage('Test image') {
@@ -39,7 +39,7 @@ node {
         /* Deployment */
         container('kubectl') {
             sh 'wget https://github.com/DM848/k8s-cluster/setup-kubectl.sh && chmod +x setup-kubectl.sh && sh setup-kubectl.sh && rm setup-kubectl.sh'
-            sh 'kubectl set image deployments/{{ service.name }} {{ service.name }}=dm848/srv-{{ service.name }}:${BUILD_NUMBER}'
+            sh 'kubectl set image deployments/acl acl=dm848/srv-acl:${BUILD_NUMBER}'
         }
     }
 }
