@@ -4,17 +4,15 @@ WORKDIR /app
 COPY . /app
 
 RUN go test ./...
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o webserver .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o webserver cmd/webserver/server.go
 
-FROM dm848/consul-service
-
+FROM dm848/consul-service:v3
 WORKDIR /server
-COPY --from=builder /app/webserver .
 
-# COPY ContainerPilot configuration
-COPY containerpilot.json5 /etc/containerpilot.json5
-ENV CONTAINERPILOT=/etc/containerpilot.json5
+COPY . /server
+COPY --from=builder /app/webserver .
+RUN chmod +x /server/webserver
 
 ENV WEB_SERVER_PORT 8888
 EXPOSE 8888
-CMD ["/bin/containerpilot"]
+CMD ["/server/start-acl.sh"]

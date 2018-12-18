@@ -1,0 +1,12 @@
+services-tmp.json
+services-tmp.yaml
+services.yaml
+services.json
+.git
+.gitignore
+.idea
+Dockerfile
+docker-compose.yaml
+Jenkinsfile
+server
+main

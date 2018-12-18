@@ -13,3 +13,10 @@
 
 .idea
 main
+server
+
+services.json
+services.yaml
+services-tmp.yaml
+services-tmp.json
+.idea

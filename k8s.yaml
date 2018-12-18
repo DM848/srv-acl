@@ -3,33 +3,33 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: acl
-  namespace: default
 spec:
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
         app: acl
     spec:
       containers:
-        - image: "dm848/srv-acl:v1"
-          imagePullPolicy: Always
-          name: acl
-          ports:
-            - containerPort: 8888
+      - name: acl
+        image: "dm848/srv-acl:v1.0.5"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8888
+        env:
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
 ---
 apiVersion: "v1"
 kind: "Service"
 metadata:
   name: acl
-  namespace: "default"
-  labels:
-    app: acl
 spec:
   ports:
-  - protocol: "TCP"
-    port: 8888
-    targetPort: 8888
+  - port: 8888
   selector:
     app: acl
-  type: "ClusterIP"
+  type: "LoadBalancer"
+

@@ -1,0 +1,12 @@
+{
+  "Name": "acl",
+  "Port": 8888,
+  "Tags": [
+    "acl"
+  ],
+  "Check": {
+    "HTTP": "http://MY_POD_IP:8888/health",
+    "Interval": "10s"
+  }
+
+}

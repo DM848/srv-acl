@@ -13,8 +13,9 @@ const (
 
 type JSend struct {
 	Status    string      `json:"status"`
-	Data      interface{} `json:"data,omitempty"`
+	Data      json.RawMessage `json:"data,omitempty"`
 	Message   string      `json:"message,omitempty"`
+	HTTPCode int `json:"http_code,omitempty"`
 	ErrorCode int         `json:"error_code,omitempty"`
 }
 
