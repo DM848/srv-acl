@@ -104,6 +104,7 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	client := http.DefaultClient
+	internalReq.Header.Set("Accept", "application/json")
 	resp, err := client.Do(internalReq)
 	if err != nil {
 		response.Status = JSendError
