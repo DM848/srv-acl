@@ -13,6 +13,8 @@ COPY . /server
 COPY --from=builder /app/webserver .
 RUN chmod +x /server/webserver
 
+HEALTHCHECK CMD curl --fail http://localhost:8888/health || exit 1
+
 ENV WEB_SERVER_PORT 8888
 EXPOSE 8888
 CMD ["/server/start-acl.sh"]
