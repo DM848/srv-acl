@@ -15,6 +15,8 @@ func SetupRoutes(router *httprouter.Router, ACLState*State) {
 		fmt.Fprintf(w, `TODO: where is dashboard static files stored?`)
 	})
 
+	router.POST("/consul/services/change", ACLState.WatchAliveServicesHandler)
+
 	// setup
 	accepts := []string{
 		http.MethodGet,
@@ -27,6 +29,7 @@ func SetupRoutes(router *httprouter.Router, ACLState*State) {
 	for _, method := range accepts {
 		router.Handle(method, "/api/*" + APIPathID, ACLState.APIHandler)
 	}
-
-	router.POST("/consul/services/change", ACLState.WatchAliveServicesHandler)
+	for _, method := range accepts {
+		router.Handle(method, "/script/*" + APIPathID, ACLState.ScriptHandler)
+	}
 }

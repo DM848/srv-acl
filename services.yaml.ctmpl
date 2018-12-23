@@ -14,6 +14,22 @@ services: #
   {{- end -}}
 {{- end -}}
 #
+user_scripts: #
+
+{{- range services -}}
+  {{- if in .Tags "user-endpoint" -}}
+    {{- $boxes := service .Name }}
+      {{- if gt (len $boxes) 0 -}}
+# service
+- name: "{{.Name | replaceAll "deployment" ""}}"
+  addresses:
+  {{- range service .Name }}
+  - "{{.Address}}:{{.Port}}" #{{ end }}
+
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+#
 ACLEntries: #
 
 {{ range tree "srv-acl_ACLEntry_" }}

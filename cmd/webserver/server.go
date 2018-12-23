@@ -18,7 +18,7 @@ func main() {
 
 
 	// ACL state to hold all configs and such
-	ACLState := &aclsrv.State{}
+	ACLState := aclsrv.NewState()
 
 	router := httprouter.New()
 
