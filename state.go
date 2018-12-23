@@ -3,15 +3,20 @@ package aclsrv
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/julienschmidt/httprouter"
+	"github.com/lestrrat-go/jwx/jwk"
 )
+
 const (
 	ConsulKVPrefix = "srv-acl_"
 )
@@ -20,6 +25,11 @@ func NewState() *State {
 	return &State{
 		httpClient: http.DefaultClient,
 	}
+}
+
+type ACLConfigEntry struct {
+	Key string      `json:"key"`
+	Val interface{} `json:"val"`
 }
 
 type State struct {
@@ -35,7 +45,60 @@ type State struct {
 
 	UserScripts []*Service `json:"user_scripts"`
 
+	PermissionDefaults []*UserLevel `json:"ACLRolesPermission"`
+
+	Config []ACLConfigEntry `json:"config"`
+
 	httpClient *http.Client
+
+	jwksMu sync.RWMutex
+	jwks   *jwk.Set
+}
+
+func (s *State) lookupConfig(key string) string {
+	s.RLock()
+	defer s.RUnlock()
+
+	for i := range s.Config {
+		if s.Config[i].Key == key {
+			return fmt.Sprint(s.Config[i].Val)
+		}
+	}
+
+	return ""
+}
+
+func (s *State) getJWK(kid string) (interface{}, error) {
+	s.jwksMu.RLock()
+	if key := s.jwks.LookupKeyID(kid); len(key) == 1 {
+		s.jwksMu.RUnlock()
+		return key[0].Materialize()
+	}
+	s.jwksMu.RUnlock()
+
+	// get fresh keys
+	set, err := jwk.FetchHTTP(jwksURL)
+	if err != nil {
+		return nil, err
+	}
+
+	// add keys to cache
+	s.jwksMu.Lock()
+	defer s.jwksMu.Unlock()
+	for i := range set.Keys {
+		k := set.Keys[i].KeyID()
+		if key := s.jwks.LookupKeyID(k); len(key) == 1 {
+			continue
+		}
+
+		s.jwks.Keys = append(s.jwks.Keys, set.Keys[i])
+	}
+
+	if key := s.jwks.LookupKeyID(kid); len(key) == 1 {
+		return key[0].Materialize()
+	}
+
+	return nil, errors.New("unable to find key")
 }
 
 // Get service if it exists
@@ -80,8 +143,10 @@ func (s *State) ServiceACL(srv *Service) (entry *ACLEntry) {
 }
 
 func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	response := &JSend{}
-	defer func(response *JSend){
+	response := &JSend{
+		HTTPCode: http.StatusOK,
+	}
+	defer func(response *JSend) {
 		response.write(w)
 	}(response)
 
@@ -105,16 +170,71 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	// verify JWT signature and get user info
-	user, length, err := getJWTUser(r)
-	ignoreCheck := length > 0
-	if err != nil && ignoreCheck {
+	tokenStr := getJWT(r.Header)
+	if tokenStr == "" {
+		if s.lookupConfig("jwt") == "true" && srvName != "jolie-deployer" {
+			response.Status = JSendFail
+			response.Message = "Missing JWT in header. Supported fields: 'Authorization: Bearer <JWT>', 'jwt: <jwt>', 'JWT: <jwt>'"
+			return
+		} else {
+			tokenStr = "a.b.c"
+		}
+	}
+	user := &User{}
+	// so.. right now we haven't found a proper way to deal with jolie-deployer in regards to
+	// security. So I'm making the JWT token optional...
+	//
+	// This allows the ACL to check the actual permission of the jolie-deployer. Such that if those permissions are
+	// ever added. You must be authenticated. Right now, the jolie deployer is hardcoded into the if else
+	// to make it an exception. With this, at least we don't have to make every other service public as well.
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		kid, ok := token.Header["kid"].(string)
+		if !ok {
+			return nil, errors.New("unable to convert kid to string")
+		}
+
+		return s.getJWK(kid)
+	})
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		if usrname := claims["cognito:username"]; usrname != nil {
+			user.ID = usrname.(UserID)
+		}
+		if p := claims["cognito:groups"]; p != nil {
+			arr := p.([]string)
+			for i := range arr {
+				if arr[i][:2] == "p:" {
+					lvl, err := strconv.ParseUint(arr[i][2:], 10, 64)
+					if err != nil {
+						err = errors.New(err.Error() + " :::: Unable to extract permission level")
+					} else {
+						user.Permission = Permission(lvl)
+					}
+					break
+				}
+			}
+		}
+	}
+
+	if (!token.Valid || err != nil) && s.lookupConfig("jwt") == "true" && srvName != "jolie-deployer" {
 		response.Status = JSendFail
-		response.Message = "issue with JWT. Error: " + err.Error()
+		response.Message = "issue with JWT. " + err.Error()
+
+		if user.ID == "" {
+			response.Message += " ::: also missing username"
+		}
+
 		return
 	}
 
 	// verify permissions / ACL
-	if acl := s.ServiceACL(srv); acl != nil && ignoreCheck && !acl.HasAccess(user) {
+	// default: whitelist everyone if no ACL config is set for service
+	if acl := s.ServiceACL(srv); acl != nil && !acl.HasAccess(user) {
 		response.Status = JSendFail
 		response.Message = "You do not have access to this service. Error: " + err.Error()
 		return
@@ -170,7 +290,7 @@ func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 
 	// verify we have created an acceptable URL
-	addr := "http://" + srv.GetAddress() + path[len("/" + srvName):]
+	addr := "http://" + srv.GetAddress() + path[len("/"+srvName):]
 	if _, err = url.Parse(addr); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -214,10 +334,9 @@ func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	w.Write(body)
 }
 
-
 func (s *State) WatchAliveServicesHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	response := &JSend{}
-	defer func(response *JSend){
+	defer func(response *JSend) {
 		response.write(w)
 	}(response)
 
@@ -227,6 +346,8 @@ func (s *State) WatchAliveServicesHandler(w http.ResponseWriter, r *http.Request
 		log.Fatal(err)
 	}
 
+	s.Lock()
+	defer s.Unlock()
 	err = json.Unmarshal(body, s)
 	if err != nil {
 		log.Fatal(err)

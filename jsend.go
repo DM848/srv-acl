@@ -12,11 +12,11 @@ const (
 )
 
 type JSend struct {
-	Status    string      `json:"status"`
+	Status    string          `json:"status"`
 	Data      json.RawMessage `json:"data,omitempty"`
-	Message   string      `json:"message,omitempty"`
-	HTTPCode int `json:"http_code,omitempty"`
-	ErrorCode int         `json:"error_code,omitempty"`
+	Message   string          `json:"message,omitempty"`
+	HTTPCode  int             `json:"http_code,omitempty"`
+	ErrorCode int             `json:"error_code,omitempty"`
 }
 
 func (j *JSend) write(w http.ResponseWriter) {

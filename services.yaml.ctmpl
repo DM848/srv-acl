@@ -37,3 +37,19 @@ ACLEntries: #
 - service: "{{ .Key | replaceAll "srv-acl_ACLEntry_" "" }}"
   min_permission: {{ .Value }}
 {{ end }}
+#
+config: #
+
+{{ range tree "srv-acl_ACLEntry-config_" }}
+# asdasd
+- key: "{{ .Key | replaceAll "srv-acl_ACLEntry-config_" "" }}"
+  val: {{ .Value }}
+{{ end }}
+#
+ACLRolesPermission: #
+
+{{ range tree "srv-acl_ACLEntry-plvl_" }}
+# role name : minimum permission
+- role: "{{ .Key | replaceAll "srv-acl_ACLEntry-plvl_" "" }}"
+  permission: {{ .Value }}
+{{ end }}

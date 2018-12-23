@@ -10,9 +10,9 @@ import (
 // assumption: a Service object never exists if there are no addresses for it
 type Service struct {
 	sync.RWMutex
-	Name      string `json:"name"`
+	Name      string   `json:"name"`
 	Addresses []string `json:"addresses"`
-	rri       int // round robin index
+	rri       int      // round robin index
 }
 
 func (s *Service) Empty() bool {
@@ -29,7 +29,6 @@ func (s *Service) GetAddress() (adr string) {
 
 	return
 }
-
 
 // getServiceName extract the service name from the uri path, after the /api prefix
 func getServiceName(apiSuffix string) (service string, err error) {

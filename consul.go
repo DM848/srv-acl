@@ -8,16 +8,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const ConsulAddress = "http://consul-node:8500"
 
 type ConsulCheck struct {
-	HTTP string `json:"HTTP,omitempty"`
-	Interval string `json:"interval,omitempty"`
-	Method string `json:"method,omitempty"`
-	Timeout string `json:"timeout,omitempty"`
-	Args []string `json:"args,omitempty"`
+	HTTP     string   `json:"HTTP,omitempty"`
+	Interval string   `json:"interval,omitempty"`
+	Method   string   `json:"method,omitempty"`
+	Timeout  string   `json:"timeout,omitempty"`
+	Args     []string `json:"args,omitempty"`
 }
 type ConsulWeights struct {
 	Passing int `json:"passing"`
@@ -78,9 +79,9 @@ func NewConsul(client *http.Client, file string) (*consul, error) {
 }
 
 type consul struct {
-	srv ConsulSrvDef
+	srv         ConsulSrvDef
 	registerred bool
-	client *http.Client
+	client      *http.Client
 }
 
 func (c *consul) LoadSrvDef(file string) (err error) {
@@ -107,6 +108,11 @@ func (c *consul) LoadSrvDef(file string) (err error) {
 
 	// set address
 	c.srv.Address = os.Getenv("MY_POD_IP")
+
+	// update check
+	if c.srv.Address != "" {
+		c.srv.Check.HTTP = strings.Replace(c.srv.Check.HTTP, "MY_POD_IP", c.srv.Address, -1)
+	}
 
 	return
 }
@@ -151,7 +157,7 @@ func (c *consul) Deregister() {
 	}
 
 	const url = "http://consul-node:8500/v1/agent/service/deregister/"
-	req, err := http.NewRequest(http.MethodPut, url + c.srv.ID, nil)
+	req, err := http.NewRequest(http.MethodPut, url+c.srv.ID, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

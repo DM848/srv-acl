@@ -1,13 +1,11 @@
 package aclsrv
 
-
-
 type ACLEntry struct {
-	Service string `json:"service"`
+	Service           string     `json:"service"`
 	MinimumPermission Permission `json:"min_permission"`
-	AllowedUserIDs []UserID
-	BlockedUserIDs []UserID
-	LastUpdated int64 // unix
+	AllowedUserIDs    []UserID   `json:"-"` //`json:"whitelisted_users"`
+	BlockedUserIDs    []UserID   `json:"-"` //`json:"blacklisted_users"`
+	LastUpdated       int64      `json:"-"` // unix
 }
 
 func (e *ACLEntry) Empty() bool {

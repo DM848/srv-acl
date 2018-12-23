@@ -4,4 +4,4 @@ services:
 
   srv-acl:
     build: .
-    image: dm848/srv-acl:v1.1.1
+    image: dm848/srv-acl:v2.0.1
