@@ -250,6 +250,7 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
+	internalReq.Header = r.Header
 	internalReq.Header.Set("Accept", "application/json")
 	resp, err := s.httpClient.Do(internalReq)
 	if err != nil {
