@@ -2,6 +2,9 @@
 
 The ACL service works as an entrypoint for our platform. Multiple instances runs behind an external google cloud load balancer to reduce any downtime.
 
+## Behaviour
+Every outgoing message from the ACL is json and uses the JSend protocol to standarise the output. How the content of the data field is structured, is up to the individual services. However, the services access through the ACL (public / endpoints) must return json valid content as this is handled in the ACL on responses. An exception to all of this, is the `/script` endpoint, as this handles traffic from user scripts which are not directly called from our platform.
+
 ## Goal
 Verify incoming requests to be authenticated (JWT) and that they have the correct permission level to access their desired service. Because of this, the ACL also keeps track with service discovery and when a new service is reported by Consul with the tag "platform-endpoint"; it is automatically given an endpoint at `/api/<service-name>`.
 
