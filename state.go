@@ -252,6 +252,7 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	internalReq.Header = r.Header
 	internalReq.Header.Set("Accept", "application/json")
+	internalReq.Header.Del("Accept-Encoding")
 	resp, err := s.httpClient.Do(internalReq)
 	if err != nil {
 		response.Status = JSendError
@@ -268,10 +269,21 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
+	fmt.Printf("\n###\n%+v\n###\n", string(body))
+	fmt.Printf("\n---\n%+v\n---\n", resp.Header)
+
 	// success
+	w.WriteHeader(resp.StatusCode)
+	for k, v := range resp.Header {
+		w.Header().Set(k, v[0])
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	response.Status = JSendSuccess
 	response.Data = body
 	response.HTTPCode = resp.StatusCode
+
+	fmt.Printf("\n###\n%+v\n###\n", string(response.Data))
+	fmt.Printf("\n---\n%+v\n---\n", w.Header())
 }
 
 func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

@@ -22,9 +22,10 @@ user_scripts: #
       {{- if gt (len $boxes) 0 -}}
 # service
 - name: "{{.Name | replaceAll "deployment" ""}}"
+  # TODO: assumes that port 8080 is used..
   addresses:
   {{- range service .Name }}
-  - "{{.Address}}:{{.Port}}" #{{ end }}
+  - "{{.Address}}:8080" #{{ end }}
 
     {{- end -}}
   {{- end -}}
