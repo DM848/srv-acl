@@ -240,9 +240,17 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
+	// variable enforcement - see README.md
+	urlValues := r.URL.Query()
+	if s.lookupConfig("enforce") == "true" {
+		// TODO: refactor
+		r.Body = enforceJSONBodyParams(r, user)
+		enforceURLQueryParams(&urlValues, user) // TODO: review pointer
+	}
+
 	// recreate request
 	previous := "/" + srvName
-	addr := "http://" + srv.GetAddress() + path[len(previous):]
+	addr := "http://" + srv.GetAddress() + path[len(previous):] + "?" + urlValues.Encode()
 	internalReq, err := http.NewRequest(r.Method, addr, r.Body)
 	if err != nil {
 		response.Status = JSendError
@@ -269,9 +277,6 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	fmt.Printf("\n###\n%+v\n###\n", string(body))
-	fmt.Printf("\n---\n%+v\n---\n", resp.Header)
-
 	// success
 	w.WriteHeader(resp.StatusCode)
 	for k, v := range resp.Header {
@@ -281,9 +286,6 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	response.Status = JSendSuccess
 	response.Data = body
 	response.HTTPCode = resp.StatusCode
-
-	fmt.Printf("\n###\n%+v\n###\n", string(response.Data))
-	fmt.Printf("\n---\n%+v\n---\n", w.Header())
 }
 
 func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -298,7 +300,7 @@ func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	// check if such a service exists
 	var srv *Service
 	if srv = s.UserScript(srvName); srv == nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "Unable to find user script for given token: " + srvName, http.StatusNotFound)
 		return
 	}
 

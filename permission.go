@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -12,44 +13,45 @@ const jwksURL = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_AMfopmP6e
 // Permission is user level. It represents a group of different permissions/activities/actions
 // a user can execute on the platform
 type Permission uint32
+func (p Permission) Str() string {
+	return strconv.FormatInt(int64(p), 10)
+}
 
 // permission flags
 const (
 	/*01*/ PFlagSeeUsers Permission = 0x1 << iota
-	/*02*/ PFlagUserSelf
-	/*03*/ PFlagUsersAll
-	/*04*/ PFlagSrvLogsSelf
-	/*05*/ PFlagSrvLogsAll
-	/*06*/ PFlagPlatformLogs
-	/*07*/ PFlagSeeJolieAll
-	/*08*/ PFlagSeeUserSafeSrv
-	/*09*/ PFlagDeployJolie
-	/*10*/ PFlagManageJolieSelf
-	/*11*/ PFlagManageJolieAll
-	/*12*/ PFlagSeeSrvAll
-	/*13*/ PFlagCreateSrv
-	/*14*/ PFlagManageSrvSelf
-	/*15*/ PFlagManageSrvAll
-	/*16*/ PFlagManageGCloud
-	/*17*/ PFlagSeeClusterInfo
-	/*18*/ PFlagSeePlatformDocs
-	/*19*/ PFlagManagePlatformDocs
-	/*20*/ PFlagMoveSrv //including jolie scripts
+	/*02*/ PFlagUserSelf // manage only own user data
+	/*03*/ PFlagUsersAll // manage all user data
+	/*04*/ PFlagSrvLogsSelf // see only logs regarding their own (service, scripts, platform)
+	/*05*/ PFlagSrvLogsAll // See logs for every service and script and platform
+	/*06*/ PFlagPlatformLogs // see all platform logs
+	/*07*/ PFlagSeeJolieAll // see all jolie services
+	/*08*/ PFlagSeeUserSafeSrv // see safe services (created for user scripts)
+	/*09*/ PFlagDeployJolie // deploy a jolie script
+	/*10*/ PFlagManageJolieSelf // manage own deployed jolie script (edit, undeploy)
+	/*11*/ PFlagManageJolieAll // manage all deployed jolie script (edit, undeploy)
+	/*12*/ PFlagSeeSrvAll // see every service (including platform services)
+	/*13*/ PFlagCreateSrv // create a new service through the generator
+	/*14*/ PFlagManageSrvSelf // manage own created service (edit, undeploy)
+	/*15*/ PFlagManageSrvAll // manage all created services
+	/*16*/ PFlagManageGCloud // send commands to google cloud (scaling perhaps)
+	/*17*/ PFlagSeeClusterInfo // see google cloud/k8s info about our cluster
+	/*18*/ PFlagSeePlatformDocs // see platform docs
+	/*19*/ PFlagManagePlatformDocs // manage platform docs
+	/*20*/ PFlagMoveSrv // move a service from one node to another
 
+	// To add move permission flags, create a PR or a GitHub issue.
 )
 
 // basic roles
 //
 
-// PermissionLvlUnverified self registered, but not approved by an admin
-const PermissionLvlUnverified = 0
-
-// PermissionLvlGuest authenticated, but not accepted as a user
-const PermissionLvlGuest = PFlagSeeJolieAll |
-	PFlagSeeUserSafeSrv
+// PermissionLvlNobody self registered, but not approved by an admin
+const PermissionLvlNobody = 0
 
 // PermissionLvlUsr user of our platform
-const PermissionLvlUsr = PermissionLvlGuest |
+const PermissionLvlUsr = PFlagSeeJolieAll |
+	PFlagSeeUserSafeSrv |
 	PFlagUserSelf |
 	PFlagSrvLogsSelf |
 	PFlagDeployJolie |
