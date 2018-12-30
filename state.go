@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/julienschmidt/httprouter"
@@ -246,7 +247,7 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	urlValues := r.URL.Query()
 	if s.lookupConfig("enforce") == "true" {
 		// TODO: refactor
-		r.Body = enforceJSONBodyParams(r, user)
+		// r.Body = enforceJSONBodyParams(r, user)
 		enforceURLQueryParams(&urlValues, user) // TODO: review pointer
 	}
 
@@ -288,6 +289,8 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	response.Status = JSendSuccess
 	response.Data = body
 	response.HTTPCode = resp.StatusCode
+
+	fmt.Println("[" + time.Now().String() + "] " + r.URL.String() + " => " + addr)
 }
 
 func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

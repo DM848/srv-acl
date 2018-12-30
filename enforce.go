@@ -30,5 +30,5 @@ func enforceURLQueryParams(values *url.Values, user *User) {
 type RawJSONStruct = map[string]json.RawMessage
 
 func enforceJSONBodyParams(r *http.Request, user *User) io.ReadCloser{
-
+ return nil
 }
