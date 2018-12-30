@@ -143,6 +143,8 @@ func (s *State) ServiceACL(srv *Service) (entry *ACLEntry) {
 }
 
 func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	setupResponse(&w, r)
+
 	response := &JSend{
 		HTTPCode: http.StatusOK,
 	}
@@ -289,6 +291,7 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 }
 
 func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	setupResponse(&w, r)
 
 	path := ps.ByName(APIPathID)
 	srvName, err := getServiceName(path)
