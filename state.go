@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/julienschmidt/httprouter"
@@ -293,7 +292,11 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	response.Data = body
 	response.InternalHTTPCode = resp.StatusCode
 
-	fmt.Println("[" + time.Now().String() + "] " + r.URL.String() + " => " + addr)
+	go logger(LogLvlINFO, &LEapi{
+		IP:          r.Host,
+		OriginalURL: r.URL.String(),
+		ProxiedURL:  addr,
+	})
 }
 
 func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
