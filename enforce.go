@@ -8,13 +8,13 @@ import (
 )
 
 func enforceURLQueryParams(values *url.Values, user *User) {
-	if values.Get( "acle_user_id") != "" {
+	if values.Get("acle_user_id") != "" {
 		values.Set("acle_user_id", user.ID.Str())
 	}
-	if values.Get( "acle_user_level") != "" {
+	if values.Get("acle_user_level") != "" {
 		values.Set("acle_user_level", user.Permission.Str())
 	}
-	if values.Get( "acle_user_level_str") != "" {
+	if values.Get("acle_user_level_str") != "" {
 		var role string = "nobody"
 		if (PermissionLvlAdm & user.Permission) == PermissionLvlAdm {
 			role = "adm"
@@ -29,6 +29,6 @@ func enforceURLQueryParams(values *url.Values, user *User) {
 
 type RawJSONStruct = map[string]json.RawMessage
 
-func enforceJSONBodyParams(r *http.Request, user *User) io.ReadCloser{
- return nil
+func enforceJSONBodyParams(r *http.Request, user *User) io.ReadCloser {
+	return nil
 }

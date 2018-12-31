@@ -253,7 +253,11 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	// recreate request
 	previous := "/" + srvName
-	addr := "http://" + srv.GetAddress() + path[len(previous):] + "?" + urlValues.Encode()
+	addr := "http://" + srv.GetAddress() + path[len(previous):]
+	urlQuery := urlValues.Encode()
+	if urlQuery != "" {
+		addr += "?" + urlQuery
+	}
 	internalReq, err := http.NewRequest(r.Method, addr, r.Body)
 	if err != nil {
 		response.Status = JSendError
@@ -281,14 +285,13 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	// success
-	w.WriteHeader(resp.StatusCode)
 	for k, v := range resp.Header {
 		w.Header().Set(k, v[0])
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	response.Status = JSendSuccess
 	response.Data = body
-	response.HTTPCode = resp.StatusCode
+	response.InternalHTTPCode = resp.StatusCode
 
 	fmt.Println("[" + time.Now().String() + "] " + r.URL.String() + " => " + addr)
 }
@@ -306,12 +309,16 @@ func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	// check if such a service exists
 	var srv *Service
 	if srv = s.UserScript(srvName); srv == nil {
-		http.Error(w, "Unable to find user script for given token: " + srvName, http.StatusNotFound)
+		http.Error(w, "Unable to find user script for given token: "+srvName, http.StatusNotFound)
 		return
 	}
 
 	// verify we have created an acceptable URL
 	addr := "http://" + srv.GetAddress() + path[len("/"+srvName):]
+	urlQuery := r.URL.Query().Encode()
+	if urlQuery != "" {
+		addr += "?" + urlQuery
+	}
 	if _, err = url.Parse(addr); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -365,6 +372,7 @@ func (s *State) WatchAliveServicesHandler(w http.ResponseWriter, r *http.Request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
 
 	s.Lock()
@@ -372,8 +380,9 @@ func (s *State) WatchAliveServicesHandler(w http.ResponseWriter, r *http.Request
 	err = json.Unmarshal(body, s)
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
 
-	data, _ := json.Marshal(s)
-	fmt.Println(string(data))
+	// data, _ := json.Marshal(s)
+	// fmt.Println(string(data))
 }
