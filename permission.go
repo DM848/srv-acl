@@ -13,6 +13,7 @@ const jwksURL = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_AMfopmP6e
 // Permission is user level. It represents a group of different permissions/activities/actions
 // a user can execute on the platform
 type Permission uint32
+
 func (p Permission) Str() string {
 	return strconv.FormatInt(int64(p), 10)
 }
