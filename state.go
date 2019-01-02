@@ -154,7 +154,7 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		response.write(w)
 
 		go logger(LogLvlINFO, &LEapi{
-			IP:          r.Host,
+			IP:          r.RemoteAddr,
 			User:        user,
 			OriginalURL: r.URL.String(),
 			ProxiedURL:  addr,
