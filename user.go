@@ -6,6 +6,6 @@ func (uid UserID) Str() string {
 }
 
 type User struct {
-	ID         UserID
-	Permission Permission
+	ID         UserID `json:"uid,omitempty"`
+	Permission Permission `json:"p"`
 }
