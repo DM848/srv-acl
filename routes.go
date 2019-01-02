@@ -24,9 +24,7 @@ type ACLInfo struct {
 func setupResponse(w *http.ResponseWriter, req *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, PATCH, OPTIONS, PUT, DELETE")
-
-	// TODO: what are the required jolie headers?
-	//(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, jwt, JWT, X-Jolie-MessageID, X-Jolie-ServicePath")
 }
 
 func SetupRoutes(router *httprouter.Router, ACLState *State) {

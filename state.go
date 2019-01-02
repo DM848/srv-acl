@@ -24,6 +24,7 @@ const (
 func NewState() *State {
 	return &State{
 		httpClient: http.DefaultClient,
+		jwks: &jwk.Set{},
 	}
 }
 
@@ -71,7 +72,7 @@ func (s *State) lookupConfig(key string) string {
 func (s *State) getJWK(kid string) (interface{}, error) {
 	s.jwksMu.RLock()
 	if key := s.jwks.LookupKeyID(kid); len(key) == 1 {
-		s.jwksMu.RUnlock()
+		defer s.jwksMu.RUnlock()
 		return key[0].Materialize()
 	}
 	s.jwksMu.RUnlock()
