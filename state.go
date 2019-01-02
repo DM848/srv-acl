@@ -148,8 +148,18 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	response := &JSend{
 		HTTPCode: http.StatusOK,
 	}
+	var addr string // proxied addr
+	var user *User
 	defer func(response *JSend) {
 		response.write(w)
+
+		go logger(LogLvlINFO, &LEapi{
+			IP:          r.Host,
+			User:        user,
+			OriginalURL: r.URL.String(),
+			ProxiedURL:  addr,
+			Err: response.Message,
+		})
 	}(response)
 
 	path := ps.ByName(APIPathID)
@@ -182,7 +192,7 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 			tokenStr = "a.b.c"
 		}
 	}
-	user := &User{}
+	user = &User{}
 	// so.. right now we haven't found a proper way to deal with jolie-deployer in regards to
 	// security. So I'm making the JWT token optional...
 	//
@@ -245,14 +255,21 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	// variable enforcement - see README.md
 	urlValues := r.URL.Query()
 	if s.lookupConfig("enforce") == "true" {
-		// TODO: refactor
-		// r.Body = enforceJSONBodyParams(r, user)
+		var l int64
+		r.Body, l, err = enforceJSONBodyParams(r.Body, user)
+		if err != nil {
+			response.Status = JSendFail
+			response.Message = "Unable to handle the ACL enforced variables. Error: " + err.Error()
+			return
+		}
+		r.ContentLength = l
+		r.Header.Set("Content-Length", strconv.FormatInt(l, 10))
 		enforceURLQueryParams(&urlValues, user) // TODO: review pointer
 	}
 
 	// recreate request
 	previous := "/" + srvName
-	addr := "http://" + srv.GetAddress() + path[len(previous):]
+	addr = "http://" + srv.GetAddress() + path[len(previous):]
 	urlQuery := urlValues.Encode()
 	if urlQuery != "" {
 		addr += "?" + urlQuery

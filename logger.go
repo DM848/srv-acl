@@ -28,6 +28,8 @@ type LEapi struct {
 	OriginalURL string      `json:"original_url"`
 	ProxiedURL  string      `json:"proxied_url"`
 	IP          string      `json:"ip"`
+	Err string `json:"err,omitempty"`
+	User *User `json:"usr,omitempty"`
 	ReqHeader   http.Header `json:"req_header,omitempty"`
 	ResHeader   http.Header `json:"res_header,omitempty"`
 }
