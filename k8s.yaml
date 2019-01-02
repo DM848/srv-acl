@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
       - name: acl
-        image: "dm848/srv-acl:v2.1.1"
+        image: "dm848/srv-acl:v2.1.2"
         imagePullPolicy: Always
         ports:
         - containerPort: 8888

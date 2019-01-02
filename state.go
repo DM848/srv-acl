@@ -308,12 +308,6 @@ func (s *State) APIHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	response.Status = JSendSuccess
 	response.Data = body
 	response.InternalHTTPCode = resp.StatusCode
-
-	go logger(LogLvlINFO, &LEapi{
-		IP:          r.Host,
-		OriginalURL: r.URL.String(),
-		ProxiedURL:  addr,
-	})
 }
 
 func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
