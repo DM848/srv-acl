@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export ACL_INTERNAL_TOKEN="$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 128 ; echo '')"
+
 # start webserver
 nohup /server/webserver &
 status=$?
@@ -37,5 +39,5 @@ while true; do
     curl \
         --request POST \
         --upload-file services.json \
-        --url http://localhost:8888/consul/services/change
+        --url http://localhost:8888/consul/services/change?token=${ACL_INTERNAL_TOKEN}
 done

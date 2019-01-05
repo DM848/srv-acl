@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"sync"
 
@@ -379,11 +380,22 @@ func (s *State) ScriptHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 func (s *State) WatchAliveServicesHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	response := &JSend{}
+	response.Status = JSendSuccess
 	defer func(response *JSend) {
 		response.write(w)
 	}(response)
 
-	defer r.Body.Close()
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		panic("internal ACL token is empty!")
+	}
+	if token != os.Getenv("ACL_INTERNAL_TOKEN") {
+		response.Message = "Missing ACL token for updating services"
+		response.HTTPCode = 403
+		response.Status = JSendFail
+		return
+	}
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Fatal(err)
